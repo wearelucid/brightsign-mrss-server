@@ -1,0 +1,4 @@
+{
+    "BASE_URL": "http://raspberrypi.local/",
+    "MEDIA_EXTENSIONS": [".mp4", ".mov", ".avi", ".mkv"]
+}
