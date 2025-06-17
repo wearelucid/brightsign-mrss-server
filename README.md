@@ -6,6 +6,18 @@ Python script and web server setup to host media from an USB drive and generate 
 
 ### 1. Install Raspberry Pi OS Lite
 
+#### Install Raspberry Pi OS
+
+- Use [Raspberry Pi Imager](https://www.raspberrypi.com/software/) to flash the image to the Pi SD Card.
+- Configure the username as `lucid`.
+- Ensure the ssh server is enabled.
+
+#### Connect to Pi via SSH
+
+```bash
+ssh lucid@<ip>
+```
+
 ### 2. Install MRSS Generator script
 
 ```bash
@@ -190,6 +202,9 @@ Add an optional config file `config.json` to the USB root to configure the mrss 
 The MRSS feeds can be used with BA:connected Media List and On Demand states.
 
 Select "Populate from Feed" in the List Content Section on the State.
+
+Configure the URL to the desired MRSS feed.
+
 Disable the "Optimize feed updates" setting.
 
 On the On Demand State, use the "Use a variable to specify the key" setting to access a specific key (video name) of the feed. For a video with the filename `video1.mp4`, the key name will be `video1`.
