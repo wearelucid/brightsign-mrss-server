@@ -9,12 +9,51 @@ import hashlib
 import xml.etree.ElementTree as ET
 from xml.dom import minidom
 import argparse
+import json
+import mimetypes
 
-# Supported video file extensions that will be included in the RSS feed
-MEDIA_EXTENSIONS = ['.mp4', '.mov', '.avi', '.mkv']
+# Default configuration values
+DEFAULT_MEDIA_EXTENSIONS = ['.mp4', '.mov', '.avi', '.mkv', '.jpg', '.jpeg', '.png', '.gif', '.bmp', '.webp', '.mp3', '.wav', '.flac', '.aac', '.ogg']
+DEFAULT_BASE_URL = 'http://raspberrypi.local/'
 
-# Base URL for the web server where media files are hosted
-BASE_URL = 'http://raspberrypi.local/'
+def load_config(folder_path):
+    """
+    Load configuration from config.json file in the specified folder if it exists.
+    
+    Args:
+        folder_path (str): Path to the folder to look for config.json
+        
+    Returns:
+        tuple: (base_url, media_extensions) - configuration values
+    """
+    config_file = os.path.join(folder_path, 'config.json')
+    
+    if os.path.exists(config_file):
+        try:
+            with open(config_file, 'r', encoding='utf-8') as f:
+                config = json.load(f)
+            
+            # Load configuration values, using defaults if not specified
+            base_url = config.get('BASE_URL', DEFAULT_BASE_URL)
+            media_extensions = config.get('MEDIA_EXTENSIONS', DEFAULT_MEDIA_EXTENSIONS)
+            
+            print(f"Loaded configuration from {config_file}")
+            print(f"  BASE_URL: {base_url}")
+            print(f"  MEDIA_EXTENSIONS: {media_extensions}")
+            
+            return base_url, media_extensions
+            
+        except (json.JSONDecodeError, IOError) as e:
+            print(f"Warning: Could not load configuration from {config_file}: {e}")
+            print("Using default configuration values.")
+            return DEFAULT_BASE_URL, DEFAULT_MEDIA_EXTENSIONS
+    else:
+        print(f"No config.json found in {folder_path}, using default configuration values.")
+        return DEFAULT_BASE_URL, DEFAULT_MEDIA_EXTENSIONS
+
+# Global configuration variables (will be set by load_config)
+MEDIA_EXTENSIONS = DEFAULT_MEDIA_EXTENSIONS
+BASE_URL = DEFAULT_BASE_URL
 
 def get_md5(file_path):
     """
@@ -47,9 +86,40 @@ def prettify_xml(elem):
     reparsed = minidom.parseString(rough_string)
     return reparsed.toprettyxml(indent="    ")
 
+def get_media_type(file_extension):
+    """
+    Determine media type based on file extension.
+    
+    Args:
+        file_extension (str): File extension (e.g., '.mp4', '.jpg')
+        
+    Returns:
+        str: Medium type ('video', 'image', 'audio')
+    """
+    # Video formats
+    video_extensions = {'.mp4', '.mov', '.avi', '.mkv', '.wmv', '.flv', '.webm', '.m4v', '.3gp', '.ogv'}
+    
+    # Image formats
+    image_extensions = {'.jpg', '.jpeg', '.png', '.gif', '.bmp', '.webp', '.tiff', '.svg', '.ico'}
+    
+    # Audio formats
+    audio_extensions = {'.mp3', '.wav', '.flac', '.aac', '.ogg', '.wma', '.m4a', '.opus'}
+    
+    ext = file_extension.lower()
+    
+    if ext in video_extensions:
+        return 'video'
+    elif ext in image_extensions:
+        return 'image'
+    elif ext in audio_extensions:
+        return 'audio'
+    else:
+        # Default fallback
+        return 'video'
+
 def generate_mrss_for_folder(folder_path, base_url, output_file, url_prefix=""):
     """
-    Generate an MRSS feed for all video files in a specified folder.
+    Generate an MRSS feed for all media files (video, image, audio) in a specified folder.
     
     Args:
         folder_path (str): Path to the folder containing media files
@@ -87,7 +157,7 @@ def generate_mrss_for_folder(folder_path, base_url, output_file, url_prefix=""):
         if not os.path.isfile(file_path):
             continue
             
-        # Check if file has a supported video extension
+        # Check if file has a supported media extension
         ext = os.path.splitext(filename)[1].lower()
         if ext not in MEDIA_EXTENSIONS:
             continue
@@ -101,20 +171,23 @@ def generate_mrss_for_folder(folder_path, base_url, output_file, url_prefix=""):
         # Create the media URL with MD5 parameter for cache control
         link = f"{base_url}{url_prefix}{filename}?md5={md5_hash}"
         
+        # Get media type based on file extension
+        medium_type = get_media_type(ext)
+        
         # Create RSS item for this media file
         item = ET.SubElement(channel, 'item')
         ET.SubElement(item, 'title').text = title
         ET.SubElement(item, 'pubDate').text = datetime.datetime.now().strftime('%Y-%m-%dT%H:%M:%S.%fZ')
         ET.SubElement(item, 'link').text = link
         ET.SubElement(item, 'description').text = link
-        ET.SubElement(item, 'medium').text = 'video'
+        ET.SubElement(item, 'medium').text = medium_type
         ET.SubElement(item, 'guid').text = f"{title}-{md5_hash}"
         
-        # Add Media RSS content element with video metadata
+        # Add Media RSS content element
         ET.SubElement(item, 'media:content', {
             'url': link,
-            'type': 'video/mp4',
-            'medium': 'video'
+            'medium': medium_type
+            ,'type': mimetypes.guess_type(file_path)[0] or 'application/octet-stream'
         })
     
     # Format the XML and write to output file
@@ -137,6 +210,10 @@ def main():
     # Get folder path from arguments
     FOLDER_PATH = args.folder
     OUTPUT_FILE = os.path.join(FOLDER_PATH, 'mrss.xml')
+
+    # Load configuration from config.json if it exists
+    global BASE_URL, MEDIA_EXTENSIONS
+    BASE_URL, MEDIA_EXTENSIONS = load_config(FOLDER_PATH)
 
     # Generate MRSS for the main folder (root level)
     generate_mrss_for_folder(FOLDER_PATH, BASE_URL, OUTPUT_FILE)
