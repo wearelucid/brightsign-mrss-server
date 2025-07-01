@@ -6,6 +6,8 @@ Python script and web server setup to host media from an USB drive and generate 
 
 ### 1. Install Raspberry Pi OS Lite
 
+Tested on Raspberry Pi 4 Model B with Raspberry Pi OS Lite (64-bit, Bookworm)
+
 #### Install Raspberry Pi OS
 
 - Use [Raspberry Pi Imager](https://www.raspberrypi.com/software/) to flash the image to the Pi SD Card.
