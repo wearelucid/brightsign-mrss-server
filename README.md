@@ -113,12 +113,15 @@ Add the following contents:
 
 ```sh
 #!/bin/sh
-# Link the usb mountpoint to the apache webroot
+
+# Check if MEDIAUSB file exists in the mount point
+if [ ! -f "$UM_MOUNTPOINT/MEDIAUSB" ]; then
+    exit 1
+fi
+
 unlink /var/www/usb
 ln -s $UM_MOUNTPOINT /var/www/usb
-
-# Run script to generate the MRSS feeds
-/usr/bin/python3 /home/lucid/brightsign-mrss-server/generate_mrss.py --folder $UM_MOUNTPOINT
+/usr/bin/python3 /home/lucid/generate_mrss.py --folder $UM_MOUNTPOINT
 ```
 
 Add execution permission on the script
@@ -137,6 +140,7 @@ The MRSS generator script automatically scans your USB drive and creates feeds b
 
 ```
 USB_DRIVE/
+├── MEDIAUSB # Device identification file. Usbmount will ignore all usb drives that do not have this file
 ├── config.json # Config file
 ├── video1.mp4
 ├── video2.mp4
