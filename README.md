@@ -121,7 +121,7 @@ fi
 
 unlink /var/www/usb
 ln -s $UM_MOUNTPOINT /var/www/usb
-/usr/bin/python3 /home/lucid/generate_mrss.py --folder $UM_MOUNTPOINT
+/usr/bin/python3 /home/lucid/brightsign-mrss-server/generate_mrss.py --folder $UM_MOUNTPOINT
 ```
 
 Add execution permission on the script
