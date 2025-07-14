@@ -145,8 +145,8 @@ def generate_mrss_for_folder(folder_path, base_url, output_file, url_prefix=""):
     ET.SubElement(channel, 'description').text = f'MB{f" - {folder_name}" if url_prefix else ""}'
     ET.SubElement(channel, 'generator').text = 'Server RSS Generator'
 
-    # Iterate through all files in the folder
-    for filename in os.listdir(folder_path):
+    # Iterate through all files in the folder (sorted alphabetically)
+    for filename in sorted(os.listdir(folder_path)):
         # Skip hidden files (starting with .)
         if filename.startswith('.'):
             continue
@@ -218,8 +218,8 @@ def main():
     # Generate MRSS for the main folder (root level)
     generate_mrss_for_folder(FOLDER_PATH, BASE_URL, OUTPUT_FILE)
 
-    # Generate MRSS for each subdirectory
-    for filename in os.listdir(FOLDER_PATH):
+    # Generate MRSS for each subdirectory (sorted alphabetically)
+    for filename in sorted(os.listdir(FOLDER_PATH)):
         # Skip hidden files
         if filename.startswith('.'):
             continue
